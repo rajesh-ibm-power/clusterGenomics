@@ -1,0 +1,1 @@
+export(gap,part,plotHeatmap,plotColorRange,plotColorbarRow,plotColorbarCol,plotTreeCol,plotTreeRow)
