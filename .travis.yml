@@ -1,28 +1,39 @@
-language: r
+language: c
+sudo: false
+branches:
+  only:
+   - master
+
 arch:
- - amd64
- - ppc64le
-sudo: true
-cache: packages
-warnings_are_errors: false
+	- amd64
+	- ppc64le
+addons:
+  apt:
+    sources:
+    - r-packages-precise
+    packages:
+    - r-base-dev	
+    - r-recommended
+    - pandoc
 
-env:
-  global:
-    - BIOC_USE_DEVEL="FALSE"  ## Use the current release version
-    - R_BUILD_ARGS="--no-build-vignettes --no-manual"
-    - R_CHECK_ARGS="--no-build-vignettes --no-manual --timings"  ## do not build vignettes or manual
-    - _R_CHECK_TIMINGS_="0"  ## get the timing information for the examples for all of your functions
+cache:
+  directories:
+    - ~/Rlib
 
-r:
- - release
+install:
+  - mkdir -p ~/Rlib
+  - echo 'R_LIBS=~/Rlib' > .Renviron
+  - echo 'options(repos = "http://cran.rstudio.com")' > .Rprofile
+  - echo '.travis.yml' > .Rbuildignore
+  - Rscript -e 'if(!"devtools" %in% rownames(installed.packages())) { install.packages("devtools", dependencies = TRUE) }'
+  - Rscript -e 'if(!"covr" %in% rownames(installed.packages())) { install.packages("covr", dependencies = TRUE) }'
+  - Rscript -e 'update.packages(ask = FALSE, instlib = "~/Rlib")'
+  - Rscript -e 'devtools::install_deps(pkg = ".", dependencies = TRUE)'
 
-r_build_args: --no-build-vignettes --no-manual
-r_check_args: --no-build-vignettes --no-manual --timings
-
-r_packages:
-  - covr
-  
-bioc_required: true
+script:
+  - R CMD build . --no-build-vignettes --no-manual
+  - PKG_FILE_NAME=$(ls -1t *.tar.gz | head -n 1)
+  - R CMD check "${PKG_FILE_NAME}" --no-build-vignettes --no-manual --as-cran 
 
 after_success:
-  - test $TRAVIS_R_VERSION_STRING = 'release' && Rscript -e 'covr::codecov()'
+  - Rscript -e 'covr::coveralls(exclusions = "src/RcppExports.cpp")'
