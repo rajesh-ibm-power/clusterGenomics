@@ -3,11 +3,13 @@ dist: bionic
 arch:
   - amd64
   - ppc64le
-language: r
-cache:
-  - packages
-  - ccache
-latex: false
+  
+language: R
+cache: packages
+addons:
+  apt:
+    packages:
+      - libgit2-dev
 
 env:
   global:
